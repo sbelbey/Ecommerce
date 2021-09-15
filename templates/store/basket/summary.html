@@ -26,7 +26,7 @@ Summary{%endblock title %} {% block content %}
             <div class="row p-3">
               <div class="col-6">Hardback Book</div>
               <div class="col-6 text-end">
-                <span class="h6 fw-bold">£ {{item.total_price}}</span>
+                <span class="h6 fw-bold">£ {{product.price}}</span>
               </div>
             </div>
           </div>
@@ -34,7 +34,7 @@ Summary{%endblock title %} {% block content %}
             <div class="row p-3">
               <div class="col-12">
                 <label for="select">Qty</label>
-                <select id="select">
+                <select id="select{{product.id}}">
                   <option selected>{{item.qty}}</option>
                   <option value="">1</option>
                   <option value="">2</option>
@@ -43,8 +43,8 @@ Summary{%endblock title %} {% block content %}
                 </select>
                 <button
                   type="button"
-                  class="btn btn-outline-secondary bt-sm"
-                  id="add-button"
+                  class="btn btn-outline-secondary bt-sm update-button"
+                  data-index="{{product.id}}"
                   value="{{product.id}}"
                 >
                   Update
@@ -66,13 +66,17 @@ Summary{%endblock title %} {% block content %}
     {% endwith %} {% endfor %}
     <div class="col-12 text-end">
       <div class="h6 fw-bold">
-        Sub Total: £ <span id="subtotal">{{basket.get_total_price}}</span>
+        Sub Total: £
+        <div id="subtotal" class="d-inline-flex">
+          {{basket.get_total_price}}
+        </div>
       </div>
     </div>
   </div>
 </main>
 
 <script>
+  //·Delete Item
   $(document).on('click', '.delete-button', function (e) {
       e.preventDefault();
       var prodid = $(this).data('index');
@@ -86,6 +90,29 @@ Summary{%endblock title %} {% block content %}
           },
           success: function (json) {
             $('.product-item[data-index="'+ prodid + '"]').remove();
+            document.getElementById("subtotal").innerHTML = json.subtotal
+            document.getElementById("basket-qty").innerHTML = json.qty
+          },
+          error: function (xhr, errmsg, err) { }
+      });
+  })
+
+  //·Update Item
+  $(document).on('click', '.update-button', function (e) {
+      e.preventDefault();
+      var prodid = $(this).data('index');
+      $.ajax({
+          type: 'POST',
+          url: '{% url 'basket:basket_update' %}',
+          data: {
+              productid: $(this).data('index'),
+              productqty: $('#select'+ prodid + ' option:selected').text(),
+              csrfmiddlewaretoken: '{{csrf_token}}',
+              action: 'post'
+          },
+          success: function (json) {
+            document.getElementById("basket-qty").innerHTML = json.qty
+            document.getElementById("subtotal").innerHTML = json.subtotal
           },
           error: function (xhr, errmsg, err) { }
       });
